@@ -6,7 +6,8 @@
     <Spinner
 	    android:id="@+id/muses_spinner"
 	    android:layout_width="match_parent"
-	    android:layout_height="60dp" />
+	    android:layout_height="60dp"
+        android:layout_marginLeft="20dp" />
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="45dp"
@@ -15,7 +16,8 @@
             android:id="@+id/refresh"
             android:layout_width="100dp"
             android:layout_height="40dp"
-            android:text="@string/refresh" />
+            android:text="@string/refresh"
+            android:layout_marginLeft="20dp" />
 	    <Button
 	        android:id="@+id/connect"
 	        android:layout_width="100dp"
@@ -29,7 +31,7 @@
 
         <Button
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="40dp"
             android:text="Save Settings"
             android:id="@+id/save" />
     </LinearLayout>
@@ -38,47 +40,54 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
-        android:text="Port Number:"
-        android:id="@+id/textView3" />
+        android:text="Port Num:"
+        android:id="@+id/textView3"
+        android:layout_marginLeft="20dp" />
 
     <EditText
         android:layout_width="81dp"
         android:layout_height="wrap_content"
         android:id="@+id/ti_port"
-        android:text="5000" />
+        android:text="5000"
+        android:layout_marginLeft="20dp" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?android:attr/textAppearanceSmall"
         android:text="IP Address:"
-        android:id="@+id/textView" />
+        android:id="@+id/textView"
+        android:layout_marginLeft="20dp" />
 
     <EditText
         android:layout_width="187dp"
         android:layout_height="wrap_content"
         android:id="@+id/ti_ip"
-        android:text="10.1.1.1" />
+        android:text="10.1.1.1"
+        android:layout_marginLeft="20dp" />
 
     <TextView
    		android:layout_width="match_parent"
     	android:layout_height="match_parent"
     	android:layout_weight="1"
     	android:textSize="16sp"
-    	android:text="@string/status" />
+    	android:text="@string/status"
+        android:layout_marginLeft="20dp" />
   	<TextView
     	android:id="@+id/con_status"
    		android:layout_width="match_parent"
     	android:layout_height="match_parent"
     	android:layout_weight="1"
     	android:textSize="16sp"
-    	android:text="@string/undefined" />
+    	android:text="@string/undefined"
+        android:layout_marginLeft="20dp" />
     <TextView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:layout_weight="1"
         android:textSize="16sp"
-        android:text="@string/eeg" />
+        android:text="@string/eeg"
+        android:layout_marginLeft="20dp" />
 	<LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -90,7 +99,8 @@
 	        android:layout_height="match_parent"
 	        android:layout_weight="1"
 	        android:textSize="16sp"
-	        android:text="@string/init_val" />
+	        android:text="@string/init_val"
+            android:layout_marginLeft="20dp" />
         <TextView
             android:id="@+id/eeg_fp1"
 	        android:layout_width="match_parent"
@@ -126,7 +136,8 @@
 	    	android:layout_height="match_parent"
 	    	android:layout_weight="1"
 	    	android:textSize="16sp"
-	    	android:text="@string/muse_elem" />
+	    	android:text="@string/muse_elem"
+             android:layout_marginLeft="20dp" />
    		<LinearLayout
         	android:layout_width="match_parent"
         	android:layout_height="match_parent"
@@ -138,42 +149,48 @@
 		        android:layout_height="match_parent"
 		        android:layout_weight="1"
 		        android:textSize="16sp"
-		        android:text="@string/init_val" />
+		        android:text="@string/init_val"
+                android:layout_marginLeft="20dp" />
 	        <TextView
 	            android:id="@+id/elem2"
 		        android:layout_width="match_parent"
 		        android:layout_height="match_parent"
 		        android:layout_weight="1"
 		        android:textSize="16sp"
-		        android:text="@string/init_val" />
+		        android:text="@string/init_val"
+                android:layout_marginLeft="20dp" />
 	        <TextView
 	            android:id="@+id/elem3"
 		        android:layout_width="match_parent"
 		        android:layout_height="match_parent"
 		        android:layout_weight="1"
 		        android:textSize="16sp"
-		        android:text="@string/init_val" />
+		        android:text="@string/init_val"
+                android:layout_marginLeft="20dp" />
 	        <TextView
 	            android:id="@+id/elem4"
 		        android:layout_width="match_parent"
 		        android:layout_height="match_parent"
 		        android:layout_weight="1"
 		        android:textSize="16sp"
-		        android:text="@string/init_val" />
+		        android:text="@string/init_val"
+                android:layout_marginLeft="20dp" />
 	    </LinearLayout>
    	    <TextView
 	   		android:layout_width="match_parent"
 	    	android:layout_height="match_parent"
 	    	android:layout_weight="1"
 	    	android:textSize="16sp"
-	    	android:text="@string/version" />
+	    	android:text="@string/version"
+            android:layout_marginLeft="20dp" />
    	    <TextView
    	        android:id="@+id/version"
 	   		android:layout_width="match_parent"
 	    	android:layout_height="match_parent"
 	    	android:layout_weight="1"
 	    	android:textSize="16sp"
-	    	android:text="@string/undefined" />
+	    	android:text="@string/undefined"
+            android:layout_marginLeft="20dp" />
 		<LinearLayout
 	        android:layout_width="match_parent"
 	        android:layout_height="45dp"
@@ -182,7 +199,8 @@
 	            android:id="@+id/pause"
 	            android:layout_width="150dp"
 	            android:layout_height="40dp"
-	            android:text="@string/pause" />
+	            android:text="@string/pause"
+                android:layout_marginLeft="20dp" />
 
         </LinearLayout>
 

@@ -9,6 +9,6 @@ This is a modified version of TestLibMuseAndroid, which captures EEG data from t
 
 It integrates the OSCP5 libraries to stream EEG data via OSC to applications such as Processing.
 
-
+Layout is designed for 1024x600 tablet devices, Android build is KitKat (4.4)
 
 
