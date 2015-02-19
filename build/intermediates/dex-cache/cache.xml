@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/Users/scottkildall/AndroidStudioProjects/EEGStreamer/app/libs/libmuseandroid.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="79a98b26ce16511fab5f4d79d2e9fc7849e56028">
+        <dex dex="/Users/scottkildall/AndroidStudioProjects/EEGStreamer/app/build/intermediates/pre-dexed/debug/libmuseandroid-49fb7a82c9fe490b8d88323470e31852b04d09f0.jar" />
+    </item>
+    <item
+        jar="/Users/scottkildall/Library/Android/sdk/extras/android/m2repository/com/android/support/support-v4/19.1.0/support-v4-19.1.0.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="85f201b380937e61a9dce6ca90ccf6872abbfb67">
+        <dex dex="/Users/scottkildall/AndroidStudioProjects/EEGStreamer/app/build/intermediates/pre-dexed/debug/support-v4-19.1.0-eebd81f5cbe08f37035ea292fb77158dd6efb753.jar" />
+    </item>
+    <item
+        jar="/Users/scottkildall/AndroidStudioProjects/EEGStreamer/app/libs/oscP5.jar"
+        jumboMode="false"
+        revision="21.1.2"
+        sha1="6a0f5c04a1d16a51d7ddd5b35b1f55ba52922a81">
+        <dex dex="/Users/scottkildall/AndroidStudioProjects/EEGStreamer/app/build/intermediates/pre-dexed/debug/oscP5-2c2082607247908de7286f09de4096dc4912d549.jar" />
+    </item>
+
+</items>
