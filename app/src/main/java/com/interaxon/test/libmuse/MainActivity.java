@@ -72,6 +72,9 @@ import oscP5.OscP5;
  * 6. You should see EEG and accelerometer data as well as connection status,
  * Version information and MuseElements (alpha, beta, theta, delta, gamma waves)
  * on the screen.
+ *
+ *  Refer to http://android.choosemuse.com/enumcom_1_1interaxon_1_1libmuse_1_1_eeg.html
+ *  For details on eeg
  */
 public class MainActivity extends Activity implements OnClickListener {
     /**
@@ -111,6 +114,7 @@ public class MainActivity extends Activity implements OnClickListener {
                         TextView statusText =
                                 (TextView) findViewById(R.id.con_status);
                         statusText.setText(status);
+
                         TextView museVersionText =
                                 (TextView) findViewById(R.id.version);
                         if (current == ConnectionState.CONNECTED) {
@@ -150,18 +154,27 @@ public class MainActivity extends Activity implements OnClickListener {
             //System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
 
             switch (p.getPacketType()) {
-                case EEG:
-                    //System.out.println("EEG Packet");
-                    updateEeg(p.getValues());
-                    break;
+                case ALPHA_ABSOLUTE:
+                    updateAlphaAbsolute(p.getValues());
 
                 case BETA_ABSOLUTE:
                     updateBetaAbsolute(p.getValues());
                     break;
 
+                case DELTA_ABSOLUTE:
+                    updateDeltaAbsolute(p.getValues());
+                    break;
+
+                case GAMMA_ABSOLUTE:
+                    updateGammaAbsolute(p.getValues());
+                    break;
+
                 case THETA_ABSOLUTE:
                     updateThetaAbsolute(p.getValues());
                     break;
+
+                case BATTERY:
+                    updateBattery(p.getValues());
                 default:
                     break;
             }
@@ -174,29 +187,9 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
-        private void updateAccelerometer(final ArrayList<Double> data) {
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        // we pulled these out
-                        /*
-                        TextView acc_x = (TextView) findViewById(R.id.acc_x);
-                        TextView acc_y = (TextView) findViewById(R.id.acc_y);
-                        TextView acc_z = (TextView) findViewById(R.id.acc_z);
-                        acc_x.setText(String.format(
-                            "%6.2f", data.get(Accelerometer.FORWARD_BACKWARD.ordinal())));
-                        acc_y.setText(String.format(
-                            "%6.2f", data.get(Accelerometer.UP_DOWN.ordinal())));
-                        acc_z.setText(String.format(
-                            "%6.2f", data.get(Accelerometer.LEFT_RIGHT.ordinal())));
-                           */
-                    }
-                });
-            }
-        }
+        /// XXX: REMOVE
 
+/*
         private void updateEeg(final ArrayList<Double> data) {
             Activity activity = activityRef.get();
             if (activity != null) {
@@ -220,7 +213,7 @@ public class MainActivity extends Activity implements OnClickListener {
                 });
             }
         }
-
+*/
         private float generateFloatFromEEG( double eegValue ) {
             if( Float.isNaN(Eeg.TP9.ordinal()))
                 return -1;
@@ -229,33 +222,82 @@ public class MainActivity extends Activity implements OnClickListener {
                 return Float.valueOf(s);
             }
         }
+
+        private void stuffOSCWaveData(String pattern, final ArrayList<Double> data) {
+            oscAddressPattern = new String(pattern);
+
+            oscWaveData[0] = generateFloatFromEEG(data.get(Eeg.TP9.ordinal()));
+            oscWaveData[1] = generateFloatFromEEG(data.get(Eeg.FP1.ordinal()));
+            oscWaveData[2] = generateFloatFromEEG(data.get(Eeg.FP2.ordinal()));
+            oscWaveData[3] = generateFloatFromEEG(data.get(Eeg.TP10.ordinal()));
+        }
+
+        // Assumes OSC Data is already in oscWaveData global array, 4 elements, check stuffOSCData()
+        private void updateWaveFields( int field1, int field2, int field3, int field4 ) {
+            TextView elem1 = (TextView) findViewById(field1);
+            TextView elem2 = (TextView) findViewById(field2);
+            TextView elem3 = (TextView) findViewById(field3);
+            TextView elem4 = (TextView) findViewById(field4);
+
+            elem1.setText(String.format( "%6.2f", oscWaveData[0]));
+            elem2.setText(String.format( "%6.2f", oscWaveData[1]));
+            elem3.setText(String.format( "%6.2f", oscWaveData[2]));
+            elem4.setText(String.format( "%6.2f", oscWaveData[3]));
+
+        }
+
+        private void updateAlphaAbsolute(final ArrayList<Double> data) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ///XXX: Do we need run call -- check updateBetaAbsolute() code here
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/alpha_absolute", data);
+
+                        ///XXX: Call function to translate into fiels
+                        sendOSCWaveData();
+
+                        updateWaveFields(R.id.alpha_t9, R.id.alpha_fp1, R.id.alpha_fp2, R.id.alpha_t10);
+                    }
+                });
+            }
+        }
+
+
+
         private void updateBetaAbsolute(final ArrayList<Double> data) {
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        oscAddressPattern = "/muse/elements/beta_absolute";
-                        for (int i = 0; i < 4; i++) {
-                            oscWaveData[0] = generateFloatFromEEG(data.get(Eeg.TP9.ordinal()));
-                            oscWaveData[1] = generateFloatFromEEG(data.get(Eeg.FP1.ordinal()));
-                            oscWaveData[2] = generateFloatFromEEG(data.get(Eeg.FP2.ordinal()));
-                            oscWaveData[3] = generateFloatFromEEG(data.get(Eeg.TP10.ordinal()));
-                        }
+                            // add code here
+                    }
+                });
+            }
+        }
 
-                        sendOSCWaveData();
-                        TextView elem1 = (TextView) findViewById(R.id.elem1);
-                        TextView elem2 = (TextView) findViewById(R.id.elem2);
-                        TextView elem3 = (TextView) findViewById(R.id.elem3);
-                        TextView elem4 = (TextView) findViewById(R.id.elem4);
-                        elem1.setText(String.format(
-                                "%6.2f", data.get(Eeg.TP9.ordinal())));
-                        elem2.setText(String.format(
-                                "%6.2f", data.get(Eeg.FP1.ordinal())));
-                        elem3.setText(String.format(
-                                "%6.2f", data.get(Eeg.FP2.ordinal())));
-                        elem4.setText(String.format(
-                                "%6.2f", data.get(Eeg.TP10.ordinal())));
+        private void updateDeltaAbsolute(final ArrayList<Double> data) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // add code here
+                    }
+                });
+            }
+        }
+
+        private void updateGammaAbsolute(final ArrayList<Double> data) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // add code here
                     }
                 });
             }
@@ -267,15 +309,21 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        oscAddressPattern = "/muse/elements/theta_absolute";
-                        for (int i = 0; i < 4; i++) {
-                            oscWaveData[0] = generateFloatFromEEG(data.get(Eeg.TP9.ordinal()));
-                            oscWaveData[1] = generateFloatFromEEG(data.get(Eeg.FP1.ordinal()));
-                            oscWaveData[2] = generateFloatFromEEG(data.get(Eeg.FP2.ordinal()));
-                            oscWaveData[3] = generateFloatFromEEG(data.get(Eeg.TP10.ordinal()));
-                        }
+                        // add code here
+                    }
+                });
+            }
+        }
 
-                        sendOSCWaveData();
+
+        private void updateBattery(final ArrayList<Double> data) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        TextView batteryDisplay = (TextView) findViewById(R.id.battery_life);
+                        batteryDisplay.setText(String.format("%6.2f", 45.2));
                     }
                 });
             }
@@ -475,14 +523,24 @@ public class MainActivity extends Activity implements OnClickListener {
         }.execute();
     }
 
-
+    ///XXX:CLEAN
     private void configure_library() {
         muse.registerConnectionListener(connectionListener);
 
         muse.registerDataListener(dataListener,
-                                  MuseDataPacketType.BETA_ABSOLUTE);
+                MuseDataPacketType.ALPHA_ABSOLUTE);
+
         muse.registerDataListener(dataListener,
-                MuseDataPacketType.THETA_ABSOLUTE);
+                                  MuseDataPacketType.BETA_ABSOLUTE);
+
+        muse.registerDataListener(dataListener,
+                MuseDataPacketType.DELTA_ABSOLUTE);
+
+        muse.registerDataListener(dataListener,
+                MuseDataPacketType.GAMMA_ABSOLUTE);
+
+        muse.registerDataListener(dataListener, MuseDataPacketType.THETA_ABSOLUTE);
+
         muse.registerDataListener(dataListener,
                                   MuseDataPacketType.ARTIFACTS);
 
