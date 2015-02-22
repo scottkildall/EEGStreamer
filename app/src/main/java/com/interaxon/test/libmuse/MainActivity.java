@@ -176,8 +176,7 @@ public class MainActivity extends Activity implements OnClickListener {
                     break;
 
                 case HORSESHOE:
-                    Log.i("DataPacket", "Horseshoe");
-                    // packet = /muse/elements/horseshoe ffff
+                    updateHorseshoe(p.getValues());
                     break;
 
                 case BATTERY:
@@ -251,7 +250,6 @@ public class MainActivity extends Activity implements OnClickListener {
             elem2.setText(String.format( "%6.2f", oscWaveData[1]));
             elem3.setText(String.format( "%6.2f", oscWaveData[2]));
             elem4.setText(String.format( "%6.2f", oscWaveData[3]));
-
         }
 
         private void updateAlphaAbsolute(final ArrayList<Double> data) {
@@ -260,11 +258,22 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/alpha_absolute", data);
+                        // stuff the OSC data fields
+                        for( int i = 0; i < 4; i++ )
+                            oscWaveData[i] = generateFloatFromEEG(data.get(i));
 
-                        // update text fields with this EEG wave data
-                        updateWaveFields(R.id.alpha_t9, R.id.alpha_fp1, R.id.alpha_fp2, R.id.alpha_t10);
+                        TextView elem1 = (TextView) findViewById(R.id.horseshoe_1);
+                        TextView elem2 = (TextView) findViewById(R.id.horseshoe_2);
+                        TextView elem3 = (TextView) findViewById(R.id.horseshoe_3);
+                        TextView elem4 = (TextView) findViewById(R.id.horseshoe_4);
+
+                        //XXX: Add better features here, a percentage
+                        //NONE == 4.0
+                        //CONNECTED == 1.0
+                        elem1.setText(String.format( "%6.2f", oscWaveData[0]));
+                        elem2.setText(String.format( "%6.2f", oscWaveData[1]));
+                        elem3.setText(String.format( "%6.2f", oscWaveData[2]));
+                        elem4.setText(String.format( "%6.2f", oscWaveData[3]));
 
                         // transmit OSC data
                         sendOSCWaveData();
@@ -348,6 +357,27 @@ public class MainActivity extends Activity implements OnClickListener {
                 });
             }
         }
+
+        private void updateHorseshoe(final ArrayList<Double> data) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/horseshoe", data);
+
+                        //-- update fields onscreen
+                        // update text fields with this EEG wave data
+                        //updateWaveFields(R.id.theta_t9, R.id.theta_fp1, R.id.theta_fp2, R.id.theta_t10);
+
+                        // transmit OSC data
+                        //sendOSCWaveData();
+                    }
+                });
+            }
+        }
+
 
         /*
         PACKET INFO:
