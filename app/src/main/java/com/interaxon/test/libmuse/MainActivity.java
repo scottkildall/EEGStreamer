@@ -147,11 +147,13 @@ public class MainActivity extends Activity implements OnClickListener {
             this.activityRef = activityRef;
         }
 
-
-
         @Override
         public void receiveMuseDataPacket(MuseDataPacket p) {
-            //System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
+            System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
+
+            ///XXX: update timestamp field here
+            long ts = p.getTimestamp();
+
 
             switch (p.getPacketType()) {
                 case ALPHA_ABSOLUTE:
@@ -173,9 +175,15 @@ public class MainActivity extends Activity implements OnClickListener {
                     updateThetaAbsolute(p.getValues());
                     break;
 
+                case HORSESHOE:
+                    Log.i("DataPacket", "Horseshoe");
+                    // packet = /muse/elements/horseshoe ffff
+                    break;
+
                 case BATTERY:
                     updateBattery(p.getValues());
                 default:
+                    Log.i("DataPacket ", "Received");
                     break;
             }
         }
@@ -252,20 +260,18 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        ///XXX: Do we need run call -- check updateBetaAbsolute() code here
                         // Extra wave patterns
                         stuffOSCWaveData("/muse/elements/alpha_absolute", data);
 
-                        ///XXX: Call function to translate into fiels
-                        sendOSCWaveData();
-
+                        // update text fields with this EEG wave data
                         updateWaveFields(R.id.alpha_t9, R.id.alpha_fp1, R.id.alpha_fp2, R.id.alpha_t10);
+
+                        // transmit OSC data
+                        sendOSCWaveData();
                     }
                 });
             }
         }
-
-
 
         private void updateBetaAbsolute(final ArrayList<Double> data) {
             Activity activity = activityRef.get();
@@ -273,7 +279,14 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                            // add code here
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/beta_absolute", data);
+
+                        // update text fields with this EEG wave data
+                        updateWaveFields(R.id.beta_t9, R.id.beta_fp1, R.id.beta_fp2, R.id.beta_t10);
+
+                        // transmit OSC data
+                        sendOSCWaveData();
                     }
                 });
             }
@@ -285,7 +298,14 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // add code here
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/delta_absolute", data);
+
+                        // update text fields with this EEG wave data
+                        updateWaveFields(R.id.delta_t9, R.id.delta_fp1, R.id.delta_fp2, R.id.delta_t10);
+
+                        // transmit OSC data
+                        sendOSCWaveData();
                     }
                 });
             }
@@ -297,7 +317,14 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // add code here
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/gamma_absolute", data);
+
+                        // update text fields with this EEG wave data
+                        updateWaveFields(R.id.gamma_t9, R.id.gamma_fp1, R.id.gamma_fp2, R.id.gamma_t10);
+
+                        // transmit OSC data
+                        sendOSCWaveData();
                     }
                 });
             }
@@ -309,12 +336,29 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // add code here
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/theta_absolute", data);
+
+                        // update text fields with this EEG wave data
+                        updateWaveFields(R.id.theta_t9, R.id.theta_fp1, R.id.theta_fp2, R.id.theta_t10);
+
+                        // transmit OSC data
+                        sendOSCWaveData();
                     }
                 });
             }
         }
 
+        /*
+        PACKET INFO:
+            /muse/batt iiii
+
+        sent every 10 seconds
+        Position 1 = State of Charge, Divide this by 100 to get percentage of charge remaining, (e.g. 5367 is 53.67%) Range: 16 bit, 0-10000.
+        Position 2 = Millivolts measured by Fuel Gauge, Range: 16bit, 3000-4200 mV.
+        Position 3 = Millivolts measured by ADC, Range: 16bits, 3200-4200 mV. Values below 3350 are not reliable(they will flat line and stop falling) and you can consider the battery close to dead at that point(about 5 mins left).
+        Position 4 = Temperature in degrees Celcius, signed integer, 1°C Resolution, range is -40 to +125 °C.
+        */
 
         private void updateBattery(final ArrayList<Double> data) {
             Activity activity = activityRef.get();
@@ -322,8 +366,9 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
+                        double batteryLife = data.get(0);
                         TextView batteryDisplay = (TextView) findViewById(R.id.battery_life);
-                        batteryDisplay.setText(String.format("%6.2f", 45.2));
+                        batteryDisplay.setText(String.format("%6.2f", batteryLife));
                     }
                 });
             }
@@ -455,11 +500,12 @@ public class MainActivity extends Activity implements OnClickListener {
             savePrefs();
         }
         else if (v.getId() == R.id.pause) {
-
+            ///REMOVE - fix
+            /*
             dataTransmission = !dataTransmission;
             if (muse != null) {
                 muse.enableDataTransmission(dataTransmission);
-            }
+            }*/
         }
     }
 
@@ -527,8 +573,7 @@ public class MainActivity extends Activity implements OnClickListener {
     private void configure_library() {
         muse.registerConnectionListener(connectionListener);
 
-        muse.registerDataListener(dataListener,
-                MuseDataPacketType.ALPHA_ABSOLUTE);
+        muse.registerDataListener(dataListener, MuseDataPacketType.ALPHA_ABSOLUTE);
 
         muse.registerDataListener(dataListener,
                                   MuseDataPacketType.BETA_ABSOLUTE);
@@ -541,8 +586,13 @@ public class MainActivity extends Activity implements OnClickListener {
 
         muse.registerDataListener(dataListener, MuseDataPacketType.THETA_ABSOLUTE);
 
-        muse.registerDataListener(dataListener,
-                                  MuseDataPacketType.ARTIFACTS);
+        ///XXX: what is ARTIFACTs
+        muse.registerDataListener(dataListener, MuseDataPacketType.ARTIFACTS);
+
+        muse.registerDataListener(dataListener, MuseDataPacketType.BATTERY);
+
+        ///XXX: deal with this later
+        muse.registerDataListener(dataListener, MuseDataPacketType.HORSESHOE);
 
         muse.setPreset(MusePreset.PRESET_14);
         muse.enableDataTransmission(dataTransmission);
