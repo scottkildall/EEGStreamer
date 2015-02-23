@@ -15,8 +15,9 @@
     <string name="undefined">unknown</string>
     <string name="artifacts">Blinks, Jaw: </string>
     <string name="msg_count">Msg number, size: </string>
-    <string name="pause">Pause/Resume</string>
+    <string name="pause">Pause</string>
     <string name="drop">Drop</string>
     <string name="muse_elem">Elements:</string>
+    <string name="codeVersion">0.1</string>
 
 </resources>

@@ -1,7 +1,7 @@
 ##### **EEG Streamer**
 
 Written by Scott Kildall
-
+With Sheet Metal Alchemist
 
 
 ##### **Description**
@@ -13,6 +13,8 @@ Layout is designed for 1024x600 tablet devices, Android build is KitKat (4.4)
 
 
 ##### **Current state**
-- Add time stamped packets, so we can see that we are receiving data
-- Figure out connection percentages — ADD Horseshoe
-- Figure out battery display, convert to percentages
+Missing: Timing feedback, better layout options, efficiency-testing
+
+##### **Release Notes**
+**version 0.1:** Stable test build, sends OSC data for absolute alpha, beta, delta, gamma, theta waves. Shows connection status and battery life on Android.
+Missing: Timing feedback, better layout options, right now is hard-coded to send information every 5 packets, but this is an arbitrary decision, ability to clear data fields like number of wave packets, etc., needs icon

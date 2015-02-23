@@ -89,6 +89,9 @@ public class MainActivity extends Activity implements OnClickListener {
     private String oscAddressPattern;
 
     private float [] oscWaveData;           // stuff with 4 floats
+    private long numWavePackets;
+    private long lastTS;                    // for package time
+    private long totalElapsedMS;            // how many elapsed MS, used for packet-counting
 
     class ConnectionListener extends MuseConnectionListener {
 
@@ -98,6 +101,7 @@ public class MainActivity extends Activity implements OnClickListener {
             this.activityRef = activityRef;
         }
 
+        ///XXX: optimize this here, figure out better pathway for this
         @Override
         public void receiveMuseConnectionPacket(MuseConnectionPacket p) {
             final ConnectionState current = p.getCurrentConnectionState();
@@ -115,8 +119,7 @@ public class MainActivity extends Activity implements OnClickListener {
                                 (TextView) findViewById(R.id.con_status);
                         statusText.setText(status);
 
-                        TextView museVersionText =
-                                (TextView) findViewById(R.id.version);
+                        TextView museVersionText = (TextView) findViewById(R.id.headset_version);
                         if (current == ConnectionState.CONNECTED) {
                             MuseVersion museVersion = muse.getMuseVersion();
                             String version = museVersion.getFirmwareType() +
@@ -149,34 +152,39 @@ public class MainActivity extends Activity implements OnClickListener {
 
         @Override
         public void receiveMuseDataPacket(MuseDataPacket p) {
-            System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
+//            System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
 
-            ///XXX: update timestamp field here
-            long ts = p.getTimestamp();
-
+            int packetSkipAmount = 4;
 
             switch (p.getPacketType()) {
                 case ALPHA_ABSOLUTE:
-                    updateAlphaAbsolute(p.getValues());
+                   if( numWavePackets % packetSkipAmount == 0 )
+                        updateAlphaAbsolute(p.getValues());
 
                 case BETA_ABSOLUTE:
-                    updateBetaAbsolute(p.getValues());
+                    if( numWavePackets % packetSkipAmount == 0 )
+                        updateBetaAbsolute(p.getValues());
                     break;
 
                 case DELTA_ABSOLUTE:
-                    updateDeltaAbsolute(p.getValues());
+                    if( numWavePackets % packetSkipAmount == 0 )
+                        updateDeltaAbsolute(p.getValues());
                     break;
 
                 case GAMMA_ABSOLUTE:
-                    updateGammaAbsolute(p.getValues());
+                    if( numWavePackets % packetSkipAmount == 0 )
+                        updateGammaAbsolute(p.getValues());
                     break;
 
                 case THETA_ABSOLUTE:
-                    updateThetaAbsolute(p.getValues());
+                    if( numWavePackets % packetSkipAmount == 0 )
+                        updateThetaAbsolute(p.getValues());
+                    updatePacketInfo(p.getTimestamp());
                     break;
 
                 case HORSESHOE:
-                    updateHorseshoe(p.getValues());
+                    if( numWavePackets % packetSkipAmount == 0 )
+                        updateHorseshoe(p.getValues());
                     break;
 
                 case BATTERY:
@@ -187,40 +195,18 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
+
         @Override
         public void receiveMuseArtifactPacket(MuseArtifactPacket p) {
+            // we ignore this
+            ///REMOVE
+            /*
             if (p.getHeadbandOn() && p.getBlink()) {
                 Log.i("Artifacts", "blink");
-            }
+            }*/
         }
 
-        /// XXX: REMOVE
 
-/*
-        private void updateEeg(final ArrayList<Double> data) {
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                         TextView tp9 = (TextView) findViewById(R.id.eeg_tp9);
-                         TextView fp1 = (TextView) findViewById(R.id.eeg_fp1);
-                         TextView fp2 = (TextView) findViewById(R.id.eeg_fp2);
-                         TextView tp10 = (TextView) findViewById(R.id.eeg_tp10);
-                         tp9.setText(String.format(
-                            "%6.2f", data.get(Eeg.TP9.ordinal())));
-                         fp1.setText(String.format(
-                            "%6.2f", data.get(Eeg.FP1.ordinal())));
-                         fp2.setText(String.format(
-                            "%6.2f", data.get(Eeg.FP2.ordinal())));
-                         tp10.setText(String.format(
-                            "%6.2f", data.get(Eeg.TP10.ordinal())));
-                    }
-                });
-            }
-        }
-*/
         private float generateFloatFromEEG( double eegValue ) {
             if( Float.isNaN(Eeg.TP9.ordinal()))
                 return -1;
@@ -258,22 +244,11 @@ public class MainActivity extends Activity implements OnClickListener {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // stuff the OSC data fields
-                        for( int i = 0; i < 4; i++ )
-                            oscWaveData[i] = generateFloatFromEEG(data.get(i));
+                        // Extra wave patterns
+                        stuffOSCWaveData("/muse/elements/alpha_absolute", data);
 
-                        TextView elem1 = (TextView) findViewById(R.id.horseshoe_1);
-                        TextView elem2 = (TextView) findViewById(R.id.horseshoe_2);
-                        TextView elem3 = (TextView) findViewById(R.id.horseshoe_3);
-                        TextView elem4 = (TextView) findViewById(R.id.horseshoe_4);
-
-                        //XXX: Add better features here, a percentage
-                        //NONE == 4.0
-                        //CONNECTED == 1.0
-                        elem1.setText(String.format( "%6.2f", oscWaveData[0]));
-                        elem2.setText(String.format( "%6.2f", oscWaveData[1]));
-                        elem3.setText(String.format( "%6.2f", oscWaveData[2]));
-                        elem4.setText(String.format( "%6.2f", oscWaveData[3]));
+                        // update text fields with this EEG wave data
+                        updateWaveFields(R.id.alpha_t9, R.id.alpha_fp1, R.id.alpha_fp2, R.id.alpha_t10);
 
                         // transmit OSC data
                         sendOSCWaveData();
@@ -358,18 +333,80 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
+        // Updates last packet speed, average packet speed, number of packets
+        private void updatePacketInfo( long ts ) {
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        /*long ts = lastTS + 666;
+                        //-- this is the first packet, so no averaging
+                        if( lastTS == 0L ) {
+                            lastTS = ts;
+                            return;
+                        }
+                        */
+                        numWavePackets++;
+                        TextView nWavePackets = (TextView) findViewById(R.id.num_packets);
+                        nWavePackets.setText(String.format( "%d", numWavePackets));
+
+                        /*
+                        long elapsedTS = ts-lastTS;
+                        float elapsedSec = (float)elapsedTS/1000.0f;
+                        totalElapsedMS= totalElapsedMS+ elapsedTS;
+
+                        TextView lastWavePacket = (TextView) findViewById(R.id.last_wave_packet);
+
+                        // this is crashing...
+                        //lastWavePacket.setText(String.format( "%6.2f", elapsedSec));
+
+                        //TextView averageWavePacket = (TextView) findViewById(R.id.average_wave_packet);
+
+
+                        float avgWavePacketSpeed = totalElapsedMS/(numWavePackets-1);
+
+                        //lastWavePacket.setText(String.format( "%6.2f", avgWavePacketSpeed));
+
+                        lastTS = ts;
+                        */
+                    }
+                });
+            }
+        }
+
+
         private void updateHorseshoe(final ArrayList<Double> data) {
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/horseshoe", data);
+                        String [] horseshoeStatus;
+                        horseshoeStatus = new String[4];
 
-                        //-- update fields onscreen
-                        // update text fields with this EEG wave data
-                        //updateWaveFields(R.id.theta_t9, R.id.theta_fp1, R.id.theta_fp2, R.id.theta_t10);
+                        // stuff the OSC data fields
+                        for( int i = 0; i < 4; i++ )
+                            horseshoeStatus[i] = getHorseshoeString( data.get(i) );
+
+                            //oscWaveData[i] = generateFloatFromEEG(data.get(i));
+
+                        TextView elem1 = (TextView) findViewById(R.id.horseshoe_1);
+                        TextView elem2 = (TextView) findViewById(R.id.horseshoe_2);
+                        TextView elem3 = (TextView) findViewById(R.id.horseshoe_3);
+                        TextView elem4 = (TextView) findViewById(R.id.horseshoe_4);
+
+                        //XXX: Add better features here, a percentage, change oscWaveData name
+                        //NONE == 4.0
+                        //CONNECTED == 1.0
+//                        elem1.setText(String.format( "%6.2f", oscWaveData[0]));
+//                        elem2.setText(String.format( "%6.2f", oscWaveData[1]));
+//                        elem3.setText(String.format( "%6.2f", oscWaveData[2]));
+//                        elem4.setText(String.format( "%6.2f", oscWaveData[3]));
+                        elem1.setText(horseshoeStatus[0]);
+                        elem2.setText(horseshoeStatus[1]);
+                        elem3.setText(horseshoeStatus[2]);
+                        elem4.setText(horseshoeStatus[3]);
 
                         // transmit OSC data
                         //sendOSCWaveData();
@@ -378,6 +415,20 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
+        // 1.0 = GOOD, 2.0 = OKAY, 3.0 = BAD, 4.0 NONE
+        private String getHorseshoeString(double horseshoeValue) {
+            if( horseshoeValue == 4.0 )
+                return "NONE";
+            else if( horseshoeValue == 3.0 )
+                return "BAD";
+            else if( horseshoeValue == 2.0 )
+                return "OKAY";
+            else if( horseshoeValue == 1.0 )
+                return "GOOD";
+            else
+                return String.format( "ERROR, value = %6.2f", horseshoeValue);
+
+        }
 
         /*
         PACKET INFO:
@@ -398,7 +449,7 @@ public class MainActivity extends Activity implements OnClickListener {
                     public void run() {
                         double batteryLife = data.get(0);
                         TextView batteryDisplay = (TextView) findViewById(R.id.battery_life);
-                        batteryDisplay.setText(String.format("%6.2f", batteryLife));
+                        batteryDisplay.setText(String.format("%6.0f", batteryLife) + "%");
                     }
                 });
             }
@@ -424,6 +475,9 @@ public class MainActivity extends Activity implements OnClickListener {
         //clearPrefs();
 
         oscWaveData = new float[4];
+        lastTS = 0L;
+        numWavePackets = 0;
+        totalElapsedMS = 0L;      ///XXX: not currently used
 
         // find way to hide popup keyboard
         super.onCreate(savedInstanceState);
@@ -530,12 +584,17 @@ public class MainActivity extends Activity implements OnClickListener {
             savePrefs();
         }
         else if (v.getId() == R.id.pause) {
-            ///REMOVE - fix
-            /*
+            Button pauseButton = (Button) findViewById(R.id.pause);
+
             dataTransmission = !dataTransmission;
             if (muse != null) {
                 muse.enableDataTransmission(dataTransmission);
-            }*/
+
+                if( dataTransmission )
+                    pauseButton.setText("Pause");
+                else
+                    pauseButton.setText("Resume");
+            }
         }
     }
 
@@ -575,19 +634,22 @@ public class MainActivity extends Activity implements OnClickListener {
         editor.apply();
     }
 
+    ///XXX: rename sendOSCWaveData
     // Global variables oscAddressPattern and oscWaveData are stuffed, from other functions
     public void sendOSCWaveData(){
         new AsyncTask<Void, Void, String>(){
 
             @Override
             protected String doInBackground(Void... params) {
-              // System.out.println("sending connect message: " + String.valueOf(oscWaveData) );
-               // OscMessage oscM = new OscMessage("/test",new Object[0]);
-                OscMessage oscM = new OscMessage(oscAddressPattern,new Object[0]);
-                for( int i = 0; i < 4; i++ )
-                    oscM.add(oscWaveData[i]);
-                OscP5.flush(oscM,thisLocation);
-                //OscP5.flush(m,new NetAddress("255.255.255.255",PORT_OUT));
+
+                boolean bSendOSCData = true;
+
+                if( bSendOSCData  ) {
+                    OscMessage oscM = new OscMessage(oscAddressPattern, new Object[0]);
+                    for (int i = 0; i < 4; i++)
+                        oscM.add(oscWaveData[i]);
+                    OscP5.flush(oscM, thisLocation);
+                }
                 return "doing in background";
             }
 
@@ -604,25 +666,17 @@ public class MainActivity extends Activity implements OnClickListener {
         muse.registerConnectionListener(connectionListener);
 
         muse.registerDataListener(dataListener, MuseDataPacketType.ALPHA_ABSOLUTE);
-
-        muse.registerDataListener(dataListener,
-                                  MuseDataPacketType.BETA_ABSOLUTE);
-
-        muse.registerDataListener(dataListener,
-                MuseDataPacketType.DELTA_ABSOLUTE);
-
-        muse.registerDataListener(dataListener,
-                MuseDataPacketType.GAMMA_ABSOLUTE);
-
+        muse.registerDataListener(dataListener, MuseDataPacketType.BETA_ABSOLUTE);
+        muse.registerDataListener(dataListener, MuseDataPacketType.DELTA_ABSOLUTE);
+        muse.registerDataListener(dataListener, MuseDataPacketType.GAMMA_ABSOLUTE);
         muse.registerDataListener(dataListener, MuseDataPacketType.THETA_ABSOLUTE);
 
-        ///XXX: what is ARTIFACTs
-        muse.registerDataListener(dataListener, MuseDataPacketType.ARTIFACTS);
-
         muse.registerDataListener(dataListener, MuseDataPacketType.BATTERY);
+        muse.registerDataListener(dataListener, MuseDataPacketType.HORSESHOE
 
-        ///XXX: deal with this later
-        muse.registerDataListener(dataListener, MuseDataPacketType.HORSESHOE);
+        // blinks ,etc, not needed for now
+        //muse.registerDataListener(dataListener, MuseDataPacketType.ARTIFACTS);
+);
 
         muse.setPreset(MusePreset.PRESET_14);
         muse.enableDataTransmission(dataTransmission);
