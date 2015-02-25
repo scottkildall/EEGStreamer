@@ -18,3 +18,7 @@ Missing: Timing feedback, better layout options, efficiency-testing
 ##### **Release Notes**
 **version 0.1:** Stable test build, sends OSC data for absolute alpha, beta, delta, gamma, theta waves. Shows connection status and battery life on Android.
 Missing: Timing feedback, better layout options, right now is hard-coded to send information every 5 packets, but this is an arbitrary decision, ability to clear data fields like number of wave packets, etc., needs icon
+
+**version 0.11:** 
+Added OSC stream for horseshoe values:
+OSC message is "/muse/elements/horseshoe"

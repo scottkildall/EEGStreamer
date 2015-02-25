@@ -88,7 +88,7 @@ public class MainActivity extends Activity implements OnClickListener {
 
     private String oscAddressPattern;
 
-    private float [] oscWaveData;           // stuff with 4 floats
+    private float [] oscData;           // stuff with 4 floats
     private long numWavePackets;
     private long lastTS;                    // for package time
     private long totalElapsedMS;            // how many elapsed MS, used for packet-counting
@@ -216,26 +216,26 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
-        private void stuffOSCWaveData(String pattern, final ArrayList<Double> data) {
+        private void stuffOSCData(String pattern, final ArrayList<Double> data) {
             oscAddressPattern = new String(pattern);
 
-            oscWaveData[0] = generateFloatFromEEG(data.get(Eeg.TP9.ordinal()));
-            oscWaveData[1] = generateFloatFromEEG(data.get(Eeg.FP1.ordinal()));
-            oscWaveData[2] = generateFloatFromEEG(data.get(Eeg.FP2.ordinal()));
-            oscWaveData[3] = generateFloatFromEEG(data.get(Eeg.TP10.ordinal()));
+            oscData[0] = generateFloatFromEEG(data.get(Eeg.TP9.ordinal()));
+            oscData[1] = generateFloatFromEEG(data.get(Eeg.FP1.ordinal()));
+            oscData[2] = generateFloatFromEEG(data.get(Eeg.FP2.ordinal()));
+            oscData[3] = generateFloatFromEEG(data.get(Eeg.TP10.ordinal()));
         }
 
-        // Assumes OSC Data is already in oscWaveData global array, 4 elements, check stuffOSCData()
+        // Assumes OSC Data is already in oscData global array, 4 elements, check stuffOSCData()
         private void updateWaveFields( int field1, int field2, int field3, int field4 ) {
             TextView elem1 = (TextView) findViewById(field1);
             TextView elem2 = (TextView) findViewById(field2);
             TextView elem3 = (TextView) findViewById(field3);
             TextView elem4 = (TextView) findViewById(field4);
 
-            elem1.setText(String.format( "%6.2f", oscWaveData[0]));
-            elem2.setText(String.format( "%6.2f", oscWaveData[1]));
-            elem3.setText(String.format( "%6.2f", oscWaveData[2]));
-            elem4.setText(String.format( "%6.2f", oscWaveData[3]));
+            elem1.setText(String.format( "%6.2f", oscData[0]));
+            elem2.setText(String.format( "%6.2f", oscData[1]));
+            elem3.setText(String.format( "%6.2f", oscData[2]));
+            elem4.setText(String.format( "%6.2f", oscData[3]));
         }
 
         private void updateAlphaAbsolute(final ArrayList<Double> data) {
@@ -245,13 +245,13 @@ public class MainActivity extends Activity implements OnClickListener {
                     @Override
                     public void run() {
                         // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/alpha_absolute", data);
+                        stuffOSCData("/muse/elements/alpha_absolute", data);
 
                         // update text fields with this EEG wave data
                         updateWaveFields(R.id.alpha_t9, R.id.alpha_fp1, R.id.alpha_fp2, R.id.alpha_t10);
 
                         // transmit OSC data
-                        sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -264,13 +264,13 @@ public class MainActivity extends Activity implements OnClickListener {
                     @Override
                     public void run() {
                         // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/beta_absolute", data);
+                        stuffOSCData("/muse/elements/beta_absolute", data);
 
                         // update text fields with this EEG wave data
                         updateWaveFields(R.id.beta_t9, R.id.beta_fp1, R.id.beta_fp2, R.id.beta_t10);
 
                         // transmit OSC data
-                        sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -283,13 +283,13 @@ public class MainActivity extends Activity implements OnClickListener {
                     @Override
                     public void run() {
                         // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/delta_absolute", data);
+                        stuffOSCData("/muse/elements/delta_absolute", data);
 
                         // update text fields with this EEG wave data
                         updateWaveFields(R.id.delta_t9, R.id.delta_fp1, R.id.delta_fp2, R.id.delta_t10);
 
                         // transmit OSC data
-                        sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -302,13 +302,13 @@ public class MainActivity extends Activity implements OnClickListener {
                     @Override
                     public void run() {
                         // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/gamma_absolute", data);
+                        stuffOSCData("/muse/elements/gamma_absolute", data);
 
                         // update text fields with this EEG wave data
                         updateWaveFields(R.id.gamma_t9, R.id.gamma_fp1, R.id.gamma_fp2, R.id.gamma_t10);
 
                         // transmit OSC data
-                        sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -321,13 +321,13 @@ public class MainActivity extends Activity implements OnClickListener {
                     @Override
                     public void run() {
                         // Extra wave patterns
-                        stuffOSCWaveData("/muse/elements/theta_absolute", data);
+                        stuffOSCData("/muse/elements/theta_absolute", data);
 
                         // update text fields with this EEG wave data
                         updateWaveFields(R.id.theta_t9, R.id.theta_fp1, R.id.theta_fp2, R.id.theta_t10);
 
                         // transmit OSC data
-                        sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -387,29 +387,26 @@ public class MainActivity extends Activity implements OnClickListener {
 
                         // stuff the OSC data fields
                         for( int i = 0; i < 4; i++ )
-                            horseshoeStatus[i] = getHorseshoeString( data.get(i) );
-
-                            //oscWaveData[i] = generateFloatFromEEG(data.get(i));
+                            horseshoeStatus[i] = getHorseshoeString(data.get(i));
 
                         TextView elem1 = (TextView) findViewById(R.id.horseshoe_1);
                         TextView elem2 = (TextView) findViewById(R.id.horseshoe_2);
                         TextView elem3 = (TextView) findViewById(R.id.horseshoe_3);
                         TextView elem4 = (TextView) findViewById(R.id.horseshoe_4);
 
-                        //XXX: Add better features here, a percentage, change oscWaveData name
-                        //NONE == 4.0
-                        //CONNECTED == 1.0
-//                        elem1.setText(String.format( "%6.2f", oscWaveData[0]));
-//                        elem2.setText(String.format( "%6.2f", oscWaveData[1]));
-//                        elem3.setText(String.format( "%6.2f", oscWaveData[2]));
-//                        elem4.setText(String.format( "%6.2f", oscWaveData[3]));
+
                         elem1.setText(horseshoeStatus[0]);
                         elem2.setText(horseshoeStatus[1]);
                         elem3.setText(horseshoeStatus[2]);
                         elem4.setText(horseshoeStatus[3]);
 
+                           // Stuff osc data
+                        oscAddressPattern = new String("/muse/elements/horseshoe");
+                        for( int i = 0; i < 4; i++ )
+                            oscData[i] = generateFloatFromEEG(data.get(i));
+
                         // transmit OSC data
-                        //sendOSCWaveData();
+                        sendOSCData();
                     }
                 });
             }
@@ -474,7 +471,7 @@ public class MainActivity extends Activity implements OnClickListener {
         // uncommment to revert to defaults
         //clearPrefs();
 
-        oscWaveData = new float[4];
+        oscData = new float[4];
         lastTS = 0L;
         numWavePackets = 0;
         totalElapsedMS = 0L;      ///XXX: not currently used
@@ -634,9 +631,8 @@ public class MainActivity extends Activity implements OnClickListener {
         editor.apply();
     }
 
-    ///XXX: rename sendOSCWaveData
-    // Global variables oscAddressPattern and oscWaveData are stuffed, from other functions
-    public void sendOSCWaveData(){
+    // Global variables oscAddressPattern and OSCData are stuffed, from other functions
+    public void sendOSCData(){
         new AsyncTask<Void, Void, String>(){
 
             @Override
@@ -647,7 +643,7 @@ public class MainActivity extends Activity implements OnClickListener {
                 if( bSendOSCData  ) {
                     OscMessage oscM = new OscMessage(oscAddressPattern, new Object[0]);
                     for (int i = 0; i < 4; i++)
-                        oscM.add(oscWaveData[i]);
+                        oscM.add(oscData[i]);
                     OscP5.flush(oscM, thisLocation);
                 }
                 return "doing in background";
