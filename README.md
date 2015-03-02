@@ -12,8 +12,11 @@ It integrates the OSCP5 libraries to stream EEG data via OSC to applications suc
 Layout is designed for 1024x600 tablet devices, Android build is KitKat (4.4)
 
 
+##### **Timing Packets**
+Touching Forehead — gets sent from headset ever 150-250ms or so
+
 ##### **Current state**
-Missing: Timing feedback, better layout options, efficiency-testing
+Missing: Timing defaults, better layout options, efficiency-testing
 
 ##### **Release Notes**
 **version 0.1:** Stable test build, sends OSC data for absolute alpha, beta, delta, gamma, theta waves. Shows connection status and battery life on Android.

@@ -90,8 +90,18 @@ public class MainActivity extends Activity implements OnClickListener {
 
     private float [] oscData;           // stuff with 4 floats
     private long numWavePackets;
+    private int touchingForehead;               // 0 or 1
+
     private long lastTS;                    // for package time
     private long totalElapsedMS;            // how many elapsed MS, used for packet-counting
+
+    Timer touchingForeheadTimer;
+    Timer horseShoeTimer;
+    Timer alphaTimer;
+    Timer betaTimer;
+    Timer deltaTimer;
+    Timer gammaTimer;
+    Timer thetaTimer;
 
     class ConnectionListener extends MuseConnectionListener {
 
@@ -152,39 +162,30 @@ public class MainActivity extends Activity implements OnClickListener {
 
         @Override
         public void receiveMuseDataPacket(MuseDataPacket p) {
-//            System.out.println( "Packet Type: " + String.valueOf(p.getPacketType()) );
-
-            int packetSkipAmount = 4;
-
+            int packetSkipAmount = 4;               // send 25% of packets (for now), keyed to BETA waves
             switch (p.getPacketType()) {
                 case ALPHA_ABSOLUTE:
-                   if( numWavePackets % packetSkipAmount == 0 )
-                        updateAlphaAbsolute(p.getValues());
+                   updateAlphaAbsolute(p.getValues());
+                   break;
 
                 case BETA_ABSOLUTE:
-                    if( numWavePackets % packetSkipAmount == 0 )
-                        updateBetaAbsolute(p.getValues());
+                    updateBetaAbsolute(p.getValues());
                     break;
 
                 case DELTA_ABSOLUTE:
-                    if( numWavePackets % packetSkipAmount == 0 )
-                        updateDeltaAbsolute(p.getValues());
+                    updateDeltaAbsolute(p.getValues());
                     break;
 
                 case GAMMA_ABSOLUTE:
-                    if( numWavePackets % packetSkipAmount == 0 )
-                        updateGammaAbsolute(p.getValues());
+                    updateGammaAbsolute(p.getValues());
                     break;
 
                 case THETA_ABSOLUTE:
-                    if( numWavePackets % packetSkipAmount == 0 )
-                        updateThetaAbsolute(p.getValues());
-                    updatePacketInfo(p.getTimestamp());
+                    updateThetaAbsolute(p.getValues());
                     break;
 
                 case HORSESHOE:
-                    if( numWavePackets % packetSkipAmount == 0 )
-                        updateHorseshoe(p.getValues());
+                    updateHorseshoe(p.getValues());
                     break;
 
                 case BATTERY:
@@ -198,12 +199,36 @@ public class MainActivity extends Activity implements OnClickListener {
 
         @Override
         public void receiveMuseArtifactPacket(MuseArtifactPacket p) {
-            // we ignore this
-            ///REMOVE
-            /*
-            if (p.getHeadbandOn() && p.getBlink()) {
-                Log.i("Artifacts", "blink");
-            }*/
+            if( touchingForeheadTimer.expired() == false ) {
+                return;
+            }
+            touchingForeheadTimer.start();
+
+            // something weird about the typecast, so we do it this way
+            if( p.getHeadbandOn())
+                touchingForehead = 1;
+            else
+                touchingForehead = 0;
+
+            Activity activity = activityRef.get();
+            if (activity != null) {
+                activity.runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        oscAddressPattern = new String("/muse/elements/touching_forehead");
+                        TextView elem1 = (TextView) findViewById(R.id.touchingForehead);
+                        if( touchingForehead == 0 )
+                            elem1.setText("NO");
+                        else
+                            elem1.setText("YES");
+
+
+                        sendOSCData();
+                    }
+                });
+            }
+
+
         }
 
 
@@ -239,6 +264,11 @@ public class MainActivity extends Activity implements OnClickListener {
         }
 
         private void updateAlphaAbsolute(final ArrayList<Double> data) {
+            if( alphaTimer.expired() == false ) {
+                return;
+            }
+            alphaTimer.start();
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -258,6 +288,11 @@ public class MainActivity extends Activity implements OnClickListener {
         }
 
         private void updateBetaAbsolute(final ArrayList<Double> data) {
+            if( betaTimer.expired() == false ) {
+                return;
+            }
+            betaTimer.start();
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -277,6 +312,11 @@ public class MainActivity extends Activity implements OnClickListener {
         }
 
         private void updateDeltaAbsolute(final ArrayList<Double> data) {
+            if( deltaTimer.expired() == false ) {
+                return;
+            }
+            deltaTimer.start();
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -296,6 +336,11 @@ public class MainActivity extends Activity implements OnClickListener {
         }
 
         private void updateGammaAbsolute(final ArrayList<Double> data) {
+            if( gammaTimer.expired() == false ) {
+                return;
+            }
+            gammaTimer.start();
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -315,6 +360,11 @@ public class MainActivity extends Activity implements OnClickListener {
         }
 
         private void updateThetaAbsolute(final ArrayList<Double> data) {
+            if( thetaTimer.expired() == false ) {
+                return;
+            }
+            thetaTimer.start();
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -333,50 +383,13 @@ public class MainActivity extends Activity implements OnClickListener {
             }
         }
 
-        // Updates last packet speed, average packet speed, number of packets
-        private void updatePacketInfo( long ts ) {
-            Activity activity = activityRef.get();
-            if (activity != null) {
-                activity.runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        /*long ts = lastTS + 666;
-                        //-- this is the first packet, so no averaging
-                        if( lastTS == 0L ) {
-                            lastTS = ts;
-                            return;
-                        }
-                        */
-                        numWavePackets++;
-                        TextView nWavePackets = (TextView) findViewById(R.id.num_packets);
-                        nWavePackets.setText(String.format( "%d", numWavePackets));
-
-                        /*
-                        long elapsedTS = ts-lastTS;
-                        float elapsedSec = (float)elapsedTS/1000.0f;
-                        totalElapsedMS= totalElapsedMS+ elapsedTS;
-
-                        TextView lastWavePacket = (TextView) findViewById(R.id.last_wave_packet);
-
-                        // this is crashing...
-                        //lastWavePacket.setText(String.format( "%6.2f", elapsedSec));
-
-                        //TextView averageWavePacket = (TextView) findViewById(R.id.average_wave_packet);
-
-
-                        float avgWavePacketSpeed = totalElapsedMS/(numWavePackets-1);
-
-                        //lastWavePacket.setText(String.format( "%6.2f", avgWavePacketSpeed));
-
-                        lastTS = ts;
-                        */
-                    }
-                });
-            }
-        }
-
-
         private void updateHorseshoe(final ArrayList<Double> data) {
+            if( horseShoeTimer.expired() == false ) {
+                return;
+            }
+            horseShoeTimer.start();
+
+
             Activity activity = activityRef.get();
             if (activity != null) {
                 activity.runOnUiThread(new Runnable() {
@@ -472,9 +485,31 @@ public class MainActivity extends Activity implements OnClickListener {
         //clearPrefs();
 
         oscData = new float[4];
+        touchingForehead = 0;
         lastTS = 0L;
         numWavePackets = 0;
         totalElapsedMS = 0L;      ///XXX: not currently used
+
+        // Allocate timers herre
+        long foreheadTimerMS = 1000;
+        long horseShoeTimerMS = 1000;
+        long waveTimerMS = 200;
+
+        touchingForeheadTimer = new Timer(foreheadTimerMS);
+        horseShoeTimer = new Timer(horseShoeTimerMS);
+        alphaTimer = new Timer(waveTimerMS);
+        betaTimer = new Timer(waveTimerMS);
+        deltaTimer = new Timer(waveTimerMS);
+        gammaTimer = new Timer(waveTimerMS);
+        thetaTimer = new Timer(waveTimerMS);
+
+        touchingForeheadTimer.start();
+        horseShoeTimer.start();
+        alphaTimer.start();
+        betaTimer.start();
+        deltaTimer.start();
+        gammaTimer.start();
+        thetaTimer.start();
 
         // find way to hide popup keyboard
         super.onCreate(savedInstanceState);
@@ -638,9 +673,14 @@ public class MainActivity extends Activity implements OnClickListener {
             @Override
             protected String doInBackground(Void... params) {
 
-                boolean bSendOSCData = true;
-
-                if( bSendOSCData  ) {
+                //-- For touching forehead status, we are just sending a single int
+                //-- otherwise, all the waveData and horseshoe goes in a float
+                if( oscAddressPattern.equals("/muse/elements/touching_forehead")) {
+                    OscMessage oscM = new OscMessage(oscAddressPattern, new Object[0]);
+                    oscM.add(touchingForehead);
+                    OscP5.flush(oscM, thisLocation);
+                }
+                else {
                     OscMessage oscM = new OscMessage(oscAddressPattern, new Object[0]);
                     for (int i = 0; i < 4; i++)
                         oscM.add(oscData[i]);
@@ -668,11 +708,10 @@ public class MainActivity extends Activity implements OnClickListener {
         muse.registerDataListener(dataListener, MuseDataPacketType.THETA_ABSOLUTE);
 
         muse.registerDataListener(dataListener, MuseDataPacketType.BATTERY);
-        muse.registerDataListener(dataListener, MuseDataPacketType.HORSESHOE
+        muse.registerDataListener(dataListener, MuseDataPacketType.HORSESHOE);
 
-        // blinks ,etc, not needed for now
-        //muse.registerDataListener(dataListener, MuseDataPacketType.ARTIFACTS);
-);
+        // Artifacts: we are just listening for touching forehead
+        muse.registerDataListener(dataListener, MuseDataPacketType.ARTIFACTS);
 
         muse.setPreset(MusePreset.PRESET_14);
         muse.enableDataTransmission(dataTransmission);

@@ -18,6 +18,6 @@
     <string name="pause">Pause</string>
     <string name="drop">Drop</string>
     <string name="muse_elem">Elements:</string>
-    <string name="codeVersion">0.11</string>
+    <string name="codeVersion">0.12</string>
 
 </resources>
